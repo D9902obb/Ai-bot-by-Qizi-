@@ -45,9 +45,9 @@ base_prompt = (
 if subject != "Общие вопросы":
     base_prompt += f" Сейчас мы изучаем предмет: {subject}. Отвечай с учетом специфики этого предмета."
 
-# Инициализируем модель (используем актуальную gemini-2.0-flash)
+# --- Инициализируем модель (теперь gemini-3.8-flash) ---
 model = genai.GenerativeModel(
-    "gemini-2.0-flash",
+    "gemini-3.8-flash",
     system_instruction=base_prompt
 )
 
@@ -67,26 +67,32 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2. Формируем ответ
+    # 2. Формируем ответ с потоковой передачей (чтобы не ждать)
     with st.chat_message("assistant"):
-        with st.spinner("Учитель готовит объяснение..."):
-            try:
-                # Преобразуем историю в формат, понятный для Gemini
-                history = []
-                for m in st.session_state.messages:
-                    role = "user" if m["role"] == "user" else "model"
-                    history.append({"role": role, "parts": [m["content"]]})
-                
-                # Отправляем запрос
-                response = model.generate_content(history)
-                answer = response.text
-                
-                # Выводим ответ
-                st.markdown(answer)
-                
-                # 3. Сохраняем ответ в историю
-                st.session_state.messages.append({"role": "assistant", "content": answer})
-                
-            except Exception as e:
-                # Если произошла ошибка (например, проблема с ключом), показываем её
-                st.error(f"Произошла ошибка: {e}")
+        response_placeholder = st.empty()
+        full_response = ""
+        
+        try:
+            # Собираем историю
+            history = []
+            for m in st.session_state.messages:
+                role = "user" if m["role"] == "user" else "model"
+                history.append({"role": role, "parts": [m["content"]]})
+            
+            # Отправляем запрос с потоковой передачей
+            response = model.generate_content(history, stream=True)
+            
+            # Читаем ответ по кусочкам и выводим на экран
+            for chunk in response:
+                if chunk.text:
+                    full_response += chunk.text
+                    response_placeholder.markdown(full_response + "▌")
+            
+            # Убираем курсор в конце
+            response_placeholder.markdown(full_response)
+            
+            # 3. Сохраняем ответ в историю
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            
+        except Exception as e:
+            st.error(f"Произошла ошибка: {e}")
