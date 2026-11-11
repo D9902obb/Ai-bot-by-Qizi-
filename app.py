@@ -14,7 +14,7 @@ except Exception:
     st.error("⚠️ Не найден ключ GEMINI_API_KEY. Добавьте его в настройках Streamlit Cloud.")
     st.stop()
 
-# Инициализация клиента с автоматическими повторными попытками (при ошибках 503)
+# Инициализация клиента с автоматическими повторными попытками (на случай ошибок 503)
 try:
     client = genai.Client(
         api_key=api_key,
@@ -37,7 +37,6 @@ with st.sidebar:
         st.rerun()
 
 # --- Инструкция для бота ---
-# Сюда мы добавили информацию о создателе
 base_prompt = (
     "Ты — талантливый, терпеливый и дружелюбный учитель. "
     "Объясняй сложные вещи простым и понятным языком, приводи примеры из жизни. "
@@ -79,9 +78,9 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
                     )
                 )
 
-            # Отправляем запрос (используем стабильную 3.5-flash)
+            # Отправляем запрос с потоковой передачей (используем Lite-версию с большим лимитом)
             response = client.models.generate_content_stream(
-                model="gemini-3.5-flash",
+                model="gemini-3.5-flash-lite", 
                 contents=contents,
                 config=types.GenerateContentConfig(system_instruction=base_prompt)
             )
@@ -97,4 +96,4 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
             st.session_state.messages.append({"role": "assistant", "content": full_response})
             
         except Exception as e:
-            st.error(f"Ошибка: {e}. Если это 503, просто подождите минуту и попробуйте снова.")
+            st.error(f"Ошибка: {e}. Если это 429, значит закончился дневной лимит. Подождите или создайте новый проект в Google AI Studio.")
