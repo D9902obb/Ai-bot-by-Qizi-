@@ -14,7 +14,7 @@ except Exception:
     st.error("⚠️ Не найден ключ GEMINI_API_KEY. Добавьте его в настройках Streamlit Cloud.")
     st.stop()
 
-# Инициализация клиента нового поколения
+# Инициализация клиента
 client = genai.Client(api_key=api_key)
 
 # --- Боковая панель ---
@@ -58,7 +58,7 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
         full_response = ""
         
         try:
-            # Преобразуем историю для нового SDK
+            # Преобразуем историю для SDK
             contents = []
             for m in st.session_state.messages:
                 contents.append(
@@ -68,9 +68,9 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
                     )
                 )
 
-            # Отправляем запрос с потоковой передачей (стриминг)
+            # Отправляем запрос с потоковой передачей, используя новую модель
             response = client.models.generate_content_stream(
-                model="gemini-2.0-flash", # Стабильная модель
+                model="gemini-3.8-flash", # Актуальная модель
                 contents=contents,
                 config=types.GenerateContentConfig(system_instruction=base_prompt)
             )
