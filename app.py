@@ -45,7 +45,7 @@ base_prompt = (
 if subject != "Общие вопросы":
     base_prompt += f" Сейчас мы изучаем предмет: {subject}. Отвечай с учетом специфики этого предмета."
 
-# --- Инициализируем модель (теперь gemini-3.8-flash) ---
+# --- Инициализируем модель ---
 model = genai.GenerativeModel(
     "gemini-3.8-flash",
     system_instruction=base_prompt
@@ -67,32 +67,25 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2. Формируем ответ с потоковой передачей (чтобы не ждать)
+    # 2. Формируем ответ
     with st.chat_message("assistant"):
-        response_placeholder = st.empty()
-        full_response = ""
-        
-        try:
-            # Собираем историю
-            history = []
-            for m in st.session_state.messages:
-                role = "user" if m["role"] == "user" else "model"
-                history.append({"role": role, "parts": [m["content"]]})
-            
-            # Отправляем запрос с потоковой передачей
-            response = model.generate_content(history, stream=True)
-            
-            # Читаем ответ по кусочкам и выводим на экран
-            for chunk in response:
-                if chunk.text:
-                    full_response += chunk.text
-                    response_placeholder.markdown(full_response + "▌")
-            
-            # Убираем курсор в конце
-            response_placeholder.markdown(full_response)
-            
-            # 3. Сохраняем ответ в историю
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-            
-        except Exception as e:
-            st.error(f"Произошла ошибка: {e}")
+        with st.spinner("Учитель готовит объяснение..."):
+            try:
+                # Собираем историю
+                history = []
+                for m in st.session_state.messages:
+                    role = "user" if m["role"] == "user" else "model"
+                    history.append({"role": role, "parts": [m["content"]]})
+                
+                # Отправляем запрос (без потоковой передачи)
+                response = model.generate_content(history)
+                
+                # Проверяем, не пустой ли ответ
+                if not response.text:
+                    st.warning("Модель вернула пустой ответ. Попробуйте переформулировать вопрос.")
+                else:
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    
+            except Exception as e:
+                st.error(f"Произошла ошибка: {e}")
