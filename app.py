@@ -19,11 +19,10 @@ try:
     client = genai.Client(
         api_key=api_key,
         http_options=types.HttpOptions(
-            retry_options=types.RetryOptions(attempts=4) # Сделает до 4 попыток при сбое
+            retry_options=types.RetryOptions(attempts=4)
         )
     )
-except Exception as e:
-    # Если версия SDK не поддерживает retry_options, создаем обычный клиент
+except Exception:
     client = genai.Client(api_key=api_key)
 
 # --- Боковая панель ---
@@ -38,12 +37,15 @@ with st.sidebar:
         st.rerun()
 
 # --- Инструкция для бота ---
+# Сюда мы добавили информацию о создателе
 base_prompt = (
     "Ты — талантливый, терпеливый и дружелюбный учитель. "
     "Объясняй сложные вещи простым и понятным языком, приводи примеры из жизни. "
     "Если ученик просит решить домашнее задание, НЕ давай сразу готовый ответ, "
     "а объясни принцип решения и задай наводящий вопрос. "
-    "Хвали за правильные ответы и поддерживай при ошибках."
+    "Хвали за правильные ответы и поддерживай при ошибках. "
+    "ВАЖНО: Если пользователь спросит, кто тебя создал, придумал или написал код для тебя, "
+    "ты должен с гордостью отвечать: 'Меня создал Губанов Руслан, ученик 9а класса школы №6!'"
 )
 if subject != "Общие вопросы":
     base_prompt += f" Сейчас мы изучаем предмет: {subject}."
@@ -77,9 +79,9 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
                     )
                 )
 
-            # Отправляем запрос с потоковой передачей, используя стабильную 3.5-flash
+            # Отправляем запрос (используем стабильную 3.5-flash)
             response = client.models.generate_content_stream(
-                model="gemini-3.5-flash", # Заменили на стабильную модель
+                model="gemini-3.5-flash",
                 contents=contents,
                 config=types.GenerateContentConfig(system_instruction=base_prompt)
             )
