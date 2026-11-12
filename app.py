@@ -8,15 +8,14 @@ st.set_page_config(page_title="Prime", page_icon="🤖", layout="wide", initial_
 # --- КАСТОМНЫЙ ДИЗАЙН (НЕОНОВЫЙ 3D-СТИЛЬ) ---
 st.markdown("""
 <style>
-    /* 1. Устанавливаем неоновый фон на весь экран */
+    /* 1. Устанавливаем ваш фон с мозгом на весь экран */
     .stApp {
-        /* Ссылка на фоновое изображение (можно заменить на свое) */
-        background-image: url("https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop");
+        background-image: url("https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/6f164babca9829332a8448705c6c84796ffe72a6/IMG_20261112_111419_754.jpg");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
         /* Затемняем фон, чтобы текст было хорошо читать */
-        background-color: rgba(10, 10, 20, 0.85);
+        background-color: rgba(10, 10, 20, 0.75);
         background-blend-mode: overlay;
     }
     
@@ -176,6 +175,7 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
                     )
                 )
 
+            # Используем Lite-версию, чтобы не было проблем с лимитами
             response = client.models.generate_content_stream(
                 model="gemini-3.5-flash-lite", 
                 contents=contents,
