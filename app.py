@@ -1,6 +1,7 @@
 import streamlit as st
 from google import genai
 from google.genai import types
+from datetime import datetime
 
 # --- Настройка страницы ---
 st.set_page_config(page_title="Prime", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
@@ -8,7 +9,7 @@ st.set_page_config(page_title="Prime", page_icon="🎓", layout="wide", initial_
 # --- КАСТОМНЫЙ ДИЗАЙН (КРАСНЫЙ НЕОН С ВАШИМ ФОНОМ) ---
 st.markdown("""
 <style>
-    /* Основной фон (используется ваша картинка с GitHub) */
+    /* Основной фон */
     .stApp {
         background-image: url("https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/a4d581252982667f5819c2d29eac44c58f286e9e/IMG_20261112_130305_537.jpg");
         background-size: cover;
@@ -41,7 +42,7 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(255, 26, 26, 0.15);
     }
     
-    /* Поле ввода (красная неоновая рамка) */
+    /* Поле ввода */
     [data-testid="stChatInput"] {
         background-color: rgba(10, 10, 10, 0.9) !important;
         border: 2px solid #ff1a1a !important;
@@ -52,8 +53,8 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Кнопки */
-    .stButton>button {
+    /* Кнопки (включая кнопку скачивания) */
+    .stButton>button, .stDownloadButton>button {
         background-color: rgba(17, 17, 17, 0.8) !important;
         color: #ffffff !important;
         border: 1px solid #ff1a1a !important;
@@ -61,7 +62,7 @@ st.markdown("""
         width: 100%;
         transition: all 0.3s ease;
     }
-    .stButton>button:hover {
+    .stButton>button:hover, .stDownloadButton>button:hover {
         background-color: #ff1a1a !important;
         color: #ffffff !important;
         box-shadow: 0 0 20px rgba(255, 26, 26, 0.7);
@@ -137,6 +138,12 @@ try:
 except Exception:
     client = genai.Client(api_key=api_key)
 
+# --- Инициализация истории (должна быть до сайдбара, чтобы кнопка скачивания работала) ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "starter_prompt" not in st.session_state:
+    st.session_state.starter_prompt = None
+
 # --- Боковая панель ---
 with st.sidebar:
     st.markdown("<h2 style='color: #ff1a1a;'>🎓 Prime</h2>", unsafe_allow_html=True)
@@ -155,6 +162,33 @@ with st.sidebar:
     )
     
     st.markdown("---")
+    
+    # --- ЛОГИКА СКАЧИВАНИЯ ИСТОРИИ ---
+    if st.session_state.messages:
+        # Формируем красивый текст для файла
+        chat_text = f"История диалога с Prime\nДата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
+        chat_text += f"Предмет: {subject} | Режим: {learning_mode}\n"
+        chat_text += "-" * 40 + "\n\n"
+        
+        for msg in st.session_state.messages:
+            role = "Вы" if msg["role"] == "user" else "Prime"
+            content = msg.get("content", "")
+            if msg.get("image"):
+                content += " [Прикреплено фото]"
+            chat_text += f"{role}: {content}\n\n"
+        
+        # Кнопка скачивания
+        st.download_button(
+            label="📥 Скачать историю (.txt)",
+            data=chat_text,
+            file_name=f"Prime_Chat_{datetime.now().strftime('%Y%m%d')}.txt",
+            mime="text/plain"
+        )
+    else:
+        st.caption("История пока пуста. Задайте вопрос, чтобы её сохранить.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     if st.button("🗑 Очистить историю"):
         st.session_state.messages = []
         st.rerun()
@@ -190,12 +224,6 @@ else:
         "Если ученик просит решить домашнее задание, НЕ давай сразу готовый ответ, а объясни принцип. "
         "Хвали за правильные ответы и поддерживай при ошибках."
     )
-
-# --- Инициализация истории ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "starter_prompt" not in st.session_state:
-    st.session_state.starter_prompt = None
 
 # --- Стартовый экран (если чат пуст) ---
 if not st.session_state.messages and not st.session_state.starter_prompt:
