@@ -3,7 +3,7 @@ from google import genai
 from google.genai import types
 
 # --- Настройка страницы ---
-st.set_page_config(page_title="ИИ-Помощник", page_icon="🤖", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Prime", page_icon="🤖", layout="centered", initial_sidebar_state="expanded")
 
 # --- КАСТОМНЫЙ ДИЗАЙН В СТИЛЕ CHATGPT ---
 st.markdown("""
@@ -69,7 +69,8 @@ st.markdown("""
 
 # --- Боковая панель ---
 with st.sidebar:
-    st.markdown("### 🤖 ИИ-Помощник")
+    st.markdown("### 🤖 Prime")
+    st.caption("Умный ИИ-помощник")
     st.markdown("---")
     
     subject = st.selectbox(
@@ -103,9 +104,9 @@ try:
 except Exception:
     client = genai.Client(api_key=api_key)
 
-# --- Инструкция для бота ---
+# --- Инструкция для бота (Теперь он знает, что он Prime) ---
 base_prompt = (
-    "Ты — талантливый, терпеливый и дружелюбный учитель. "
+    "Твое имя — Prime. Ты — талантливый, терпеливый и дружелюбный учитель. "
     "Объясняй сложные вещи простым и понятным языком, приводи примеры из жизни. "
     "Если ученик просит решить домашнее задание, НЕ давай сразу готовый ответ, "
     "а объясни принцип решения и задай наводящий вопрос. "
