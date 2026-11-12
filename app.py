@@ -2,6 +2,9 @@ import streamlit as st
 from google import genai
 from google.genai import types
 from datetime import datetime
+from gtts import gTTS
+import io
+import re
 
 # --- Настройка страницы ---
 st.set_page_config(page_title="Prime", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
@@ -101,7 +104,7 @@ st.markdown("""
     <span>🎓</span>
     <span><span class="red-letter">P</span>rime</span>
 </div>
-<div class="main-subtitle">ИИ-Помощник ученика. Объясняет любую тему простыми словами.</div>
+<div class="main-subtitle">ИИ-Помощник ученика. Теперь умеет говорить!</div>
 """, unsafe_allow_html=True)
 
 # --- Подключение API-ключа ---
@@ -118,6 +121,24 @@ try:
     )
 except Exception:
     client = genai.Client(api_key=api_key)
+
+# --- ФУНКЦИЯ ОЗВУЧКИ ---
+def generate_audio(text):
+    try:
+        # Очищаем текст от LaTeX и символов разметки перед озвучкой
+        clean_text = re.sub(r'\$\$(.*?)\$\$', '... формула ...', text, flags=re.DOTALL)
+        clean_text = re.sub(r'\$(.*?)\$', r'\1', clean_text)
+        clean_text = clean_text.replace('*', '').replace('#', '').replace('_', '')
+        
+        # Генерируем речь
+        tts = gTTS(text=clean_text, lang='ru', slow=False)
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        return fp
+    except Exception as e:
+        st.error(f"Ошибка озвучки: {e}")
+        return None
 
 # --- Инициализация истории ---
 if "messages" not in st.session_state:
@@ -180,8 +201,6 @@ base_prompt = (
     "Твое имя — Prime. Ты — талантливый, дружелюбный учитель. "
     "ВАЖНО: Если пользователь спросит, кто тебя создал, придумал или написал код, "
     "ты должен с гордостью отвечать: 'Меня создал Губанов Руслан, ученик 9а класса школы №6!' "
-    
-    # ДОБАВЛЯЕМ ПРАВИЛО ДЛЯ МАТЕМАТИКИ
     "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО ДЛЯ ФОРМУЛ: Все математические и физические формулы оформляй в формате LaTeX. "
     "Для формул внутри строки используй одинарные знаки доллара (например, $E=mc^2$). "
     "Для больших формул на отдельной строке используй двойные знаки доллара (например, $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$). "
@@ -227,15 +246,22 @@ if not st.session_state.messages and not st.session_state.starter_prompt:
             st.session_state.starter_prompt = "Перечисли столицы Европы и дай к ним короткие подсказки"
             st.rerun()
 
-# --- Отображение истории ---
-for msg in st.session_state.messages:
+# --- Отображение истории с кнопками озвучки ---
+for i, msg in enumerate(st.session_state.messages):
     avatar = "👤" if msg["role"] == "user" else "🎓"
     with st.chat_message(msg["role"], avatar=avatar):
         if msg.get("image"):
             st.image(msg["image"], width=300)
         if msg["content"]:
-            # Streamlit автоматически распознает $ и $$ в markdown как LaTeX
             st.markdown(msg["content"])
+            
+            # Добавляем кнопку озвучки только для ответов бота
+            if msg["role"] == "assistant":
+                if st.button("🔊 Прослушать ответ", key=f"tts_{i}"):
+                    with st.spinner("Генерирую голос..."):
+                        audio_data = generate_audio(msg["content"])
+                        if audio_data:
+                            st.audio(audio_data, format="audio/mp3")
 
 # --- Поле ввода ---
 chat_input = st.chat_input("Задай вопрос или прикрепи фото (📎)...", accept_file=True, file_type=["jpg", "jpeg", "png"])
@@ -294,13 +320,18 @@ if chat_input:
             for chunk in response:
                 if chunk.text:
                     full_response += chunk.text
-                    # Временно заменяем закрывающие доллары, чтобы курсор не ломал формулу при печати
                     safe_response = full_response.replace("$$", "$$ ") 
                     response_placeholder.markdown(safe_response + "▌")
             
-            # Финальный вывод чистого ответа
             response_placeholder.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response, "image": None})
             
+            # Сразу после ответа показываем кнопку озвучки
+            if st.button("🔊 Прослушать ответ", key="tts_new"):
+                with st.spinner("Генерирую голос..."):
+                    audio_data = generate_audio(full_response)
+                    if audio_data:
+                        st.audio(audio_data, format="audio/mp3")
+                        
         except Exception as e:
             st.error(f"Ошибка: {e}")
