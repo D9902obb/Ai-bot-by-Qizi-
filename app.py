@@ -6,10 +6,9 @@ from datetime import datetime
 # --- Настройка страницы ---
 st.set_page_config(page_title="Prime", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
-# --- КАСТОМНЫЙ ДИЗАЙН (КРАСНЫЙ НЕОН С ВАШИМ ФОНОМ) ---
+# --- КАСТОМНЫЙ ДИЗАЙН (КРАСНЫЙ НЕОН) ---
 st.markdown("""
 <style>
-    /* Основной фон */
     .stApp {
         background-image: url("https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/a4d581252982667f5819c2d29eac44c58f286e9e/IMG_20261112_130305_537.jpg");
         background-size: cover;
@@ -17,21 +16,15 @@ st.markdown("""
         background-attachment: fixed;
         background-color: #000000;
     }
-    
-    /* Боковая панель (полупрозрачная) */
     [data-testid="stSidebar"] {
         background-color: rgba(10, 10, 10, 0.85) !important;
         backdrop-filter: blur(10px);
         border-right: 1px solid #ff1a1a;
     }
-    
-    /* Текст */
     .stMarkdown, p, h1, h2, h3, span, label {
         color: #f8fafc !important;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    
-    /* Стили для пузырей сообщений */
     [data-testid="stChatMessage"] {
         background-color: rgba(17, 17, 17, 0.85) !important;
         backdrop-filter: blur(5px);
@@ -41,8 +34,6 @@ st.markdown("""
         margin-bottom: 15px !important;
         box-shadow: 0 0 15px rgba(255, 26, 26, 0.15);
     }
-    
-    /* Поле ввода */
     [data-testid="stChatInput"] {
         background-color: rgba(10, 10, 10, 0.9) !important;
         border: 2px solid #ff1a1a !important;
@@ -52,8 +43,6 @@ st.markdown("""
     [data-testid="stChatInput"] textarea {
         color: #ffffff !important;
     }
-    
-    /* Кнопки (включая кнопку скачивания) */
     .stButton>button, .stDownloadButton>button {
         background-color: rgba(17, 17, 17, 0.8) !important;
         color: #ffffff !important;
@@ -67,23 +56,17 @@ st.markdown("""
         color: #ffffff !important;
         box-shadow: 0 0 20px rgba(255, 26, 26, 0.7);
     }
-    
-    /* Выпадающий список */
     .stSelectbox div[data-baseweb="select"] > div {
         background-color: rgba(17, 17, 17, 0.9) !important;
         border: 1px solid #ff1a1a !important;
         color: #fff !important;
     }
-    
-    /* Радиокнопки (режимы) */
     [data-testid="stSidebar"] .stRadio > div {
         background-color: rgba(17, 17, 17, 0.8);
         padding: 10px;
         border-radius: 10px;
         border: 1px solid rgba(255, 26, 26, 0.3);
     }
-    
-    /* Кастомный заголовок */
     .main-title {
         text-align: center;
         font-size: 3.5rem;
@@ -106,15 +89,13 @@ st.markdown("""
         margin-bottom: 40px;
         text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
-    
-    /* Скрываем лишнее */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- КАСТОМНЫЙ ЗАГОЛОВОК ---
+# --- ЗАГОЛОВОК ---
 st.markdown("""
 <div class="main-title">
     <span>🎓</span>
@@ -138,7 +119,7 @@ try:
 except Exception:
     client = genai.Client(api_key=api_key)
 
-# --- Инициализация истории (должна быть до сайдбара, чтобы кнопка скачивания работала) ---
+# --- Инициализация истории ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "starter_prompt" not in st.session_state:
@@ -163,9 +144,8 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # --- ЛОГИКА СКАЧИВАНИЯ ИСТОРИИ ---
+    # Скачивание истории
     if st.session_state.messages:
-        # Формируем красивый текст для файла
         chat_text = f"История диалога с Prime\nДата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
         chat_text += f"Предмет: {subject} | Режим: {learning_mode}\n"
         chat_text += "-" * 40 + "\n\n"
@@ -177,7 +157,6 @@ with st.sidebar:
                 content += " [Прикреплено фото]"
             chat_text += f"{role}: {content}\n\n"
         
-        # Кнопка скачивания
         st.download_button(
             label="📥 Скачать историю (.txt)",
             data=chat_text,
@@ -185,7 +164,7 @@ with st.sidebar:
             mime="text/plain"
         )
     else:
-        st.caption("История пока пуста. Задайте вопрос, чтобы её сохранить.")
+        st.caption("История пока пуста.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -201,6 +180,12 @@ base_prompt = (
     "Твое имя — Prime. Ты — талантливый, дружелюбный учитель. "
     "ВАЖНО: Если пользователь спросит, кто тебя создал, придумал или написал код, "
     "ты должен с гордостью отвечать: 'Меня создал Губанов Руслан, ученик 9а класса школы №6!' "
+    
+    # ДОБАВЛЯЕМ ПРАВИЛО ДЛЯ МАТЕМАТИКИ
+    "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО ДЛЯ ФОРМУЛ: Все математические и физические формулы оформляй в формате LaTeX. "
+    "Для формул внутри строки используй одинарные знаки доллара (например, $E=mc^2$). "
+    "Для больших формул на отдельной строке используй двойные знаки доллара (например, $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$). "
+    "Никогда не пиши формулы просто текстом. "
 )
 
 if subject != "Общие вопросы":
@@ -209,8 +194,7 @@ if subject != "Общие вопросы":
 if learning_mode == "Объясни как 5-летнему":
     base_prompt += (
         "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Объясняй любую тему так, как будто объясняешь пятилетнему ребенку. "
-        "Используй самые простые слова, приводи примеры с игрушками или конфетами. "
-        "Никаких сложных терминов."
+        "Используй самые простые слова и примеры с игрушками. Если нужна формула — объясни её смысл на пальцах."
     )
 elif learning_mode == "Режим Экзаменатора":
     base_prompt += (
@@ -221,16 +205,16 @@ elif learning_mode == "Режим Экзаменатора":
 else:
     base_prompt += (
         "Объясняй сложные вещи простым и понятным языком, приводи примеры из жизни. "
-        "Если ученик просит решить домашнее задание, НЕ давай сразу готовый ответ, а объясни принцип. "
+        "Если ученик просит решить домашнее задание, объясни принцип решения шаг за шагом. "
         "Хвали за правильные ответы и поддерживай при ошибках."
     )
 
-# --- Стартовый экран (если чат пуст) ---
+# --- Стартовый экран ---
 if not st.session_state.messages and not st.session_state.starter_prompt:
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🧮 Объясни теорему Пифагора"):
-            st.session_state.starter_prompt = "Объясни теорему Пифагора простыми словами"
+        if st.button("📐 Реши квадратное уравнение"):
+            st.session_state.starter_prompt = "Объясни, как решать квадратное уравнение x^2 - 5x + 6 = 0. Покажи формулу дискриминанта."
             st.rerun()
         if st.button("🧬 Что такое фотосинтез?"):
             st.session_state.starter_prompt = "Объясни процесс фотосинтеза кратко и понятно"
@@ -240,7 +224,7 @@ if not st.session_state.messages and not st.session_state.starter_prompt:
             st.session_state.starter_prompt = "Начни экзамен по истории. Задай мне первый вопрос."
             st.rerun()
         if st.button("🌍 Столицы стран"):
-            st.session_state.starter_prompt = "Перечисли столицы Европы и дай к ним короткие подсказки для запоминания"
+            st.session_state.starter_prompt = "Перечисли столицы Европы и дай к ним короткие подсказки"
             st.rerun()
 
 # --- Отображение истории ---
@@ -250,6 +234,7 @@ for msg in st.session_state.messages:
         if msg.get("image"):
             st.image(msg["image"], width=300)
         if msg["content"]:
+            # Streamlit автоматически распознает $ и $$ в markdown как LaTeX
             st.markdown(msg["content"])
 
 # --- Поле ввода ---
@@ -309,8 +294,11 @@ if chat_input:
             for chunk in response:
                 if chunk.text:
                     full_response += chunk.text
-                    response_placeholder.markdown(full_response + "▌")
+                    # Временно заменяем закрывающие доллары, чтобы курсор не ломал формулу при печати
+                    safe_response = full_response.replace("$$", "$$ ") 
+                    response_placeholder.markdown(safe_response + "▌")
             
+            # Финальный вывод чистого ответа
             response_placeholder.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response, "image": None})
             
