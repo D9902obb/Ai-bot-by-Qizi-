@@ -5,19 +5,23 @@ from google.genai import types
 # --- Настройка страницы ---
 st.set_page_config(page_title="Prime", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
-# --- КАСТОМНЫЙ ДИЗАЙН (КРАСНЫЙ НЕОН) ---
+# --- КАСТОМНЫЙ ДИЗАЙН (КРАСНЫЙ НЕОН С ВАШИМ ФОНОМ) ---
 st.markdown("""
 <style>
-    /* Основной фон с красным свечением */
+    /* Основной фон (используется ваша картинка с GitHub) */
     .stApp {
-        background: radial-gradient(circle at 50% 0%, #2a0000 0%, #0a0a0a 50%, #000000 100%);
-        color: #ffffff;
+        background-image: url("https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/a4d581252982667f5819c2d29eac44c58f286e9e/IMG_20261112_130305_537.jpg");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-color: #000000;
     }
     
-    /* Боковая панель */
+    /* Боковая панель (полупрозрачная) */
     [data-testid="stSidebar"] {
-        background-color: #0a0a0a !important;
-        border-right: 1px solid #330000;
+        background-color: rgba(10, 10, 10, 0.85) !important;
+        backdrop-filter: blur(10px);
+        border-right: 1px solid #ff1a1a;
     }
     
     /* Текст */
@@ -28,20 +32,21 @@ st.markdown("""
     
     /* Стили для пузырей сообщений */
     [data-testid="stChatMessage"] {
-        background-color: #111111 !important;
+        background-color: rgba(17, 17, 17, 0.85) !important;
+        backdrop-filter: blur(5px);
         border: 1px solid #ff1a1a !important;
         border-radius: 12px !important;
         padding: 15px !important;
         margin-bottom: 15px !important;
-        box-shadow: 0 0 15px rgba(255, 26, 26, 0.1);
+        box-shadow: 0 0 15px rgba(255, 26, 26, 0.15);
     }
     
-    /* Поле ввода (красная рамка) */
+    /* Поле ввода (красная неоновая рамка) */
     [data-testid="stChatInput"] {
-        background-color: #0a0a0a !important;
+        background-color: rgba(10, 10, 10, 0.9) !important;
         border: 2px solid #ff1a1a !important;
         border-radius: 12px !important;
-        box-shadow: 0 0 15px rgba(255, 26, 26, 0.3) !important;
+        box-shadow: 0 0 20px rgba(255, 26, 26, 0.4) !important;
     }
     [data-testid="stChatInput"] textarea {
         color: #ffffff !important;
@@ -49,7 +54,7 @@ st.markdown("""
     
     /* Кнопки */
     .stButton>button {
-        background-color: #111111 !important;
+        background-color: rgba(17, 17, 17, 0.8) !important;
         color: #ffffff !important;
         border: 1px solid #ff1a1a !important;
         border-radius: 8px !important;
@@ -59,22 +64,22 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #ff1a1a !important;
         color: #ffffff !important;
-        box-shadow: 0 0 15px rgba(255, 26, 26, 0.6);
+        box-shadow: 0 0 20px rgba(255, 26, 26, 0.7);
     }
     
     /* Выпадающий список */
     .stSelectbox div[data-baseweb="select"] > div {
-        background-color: #111111 !important;
-        border: 1px solid #330000 !important;
+        background-color: rgba(17, 17, 17, 0.9) !important;
+        border: 1px solid #ff1a1a !important;
         color: #fff !important;
     }
     
     /* Радиокнопки (режимы) */
     [data-testid="stSidebar"] .stRadio > div {
-        background-color: #111111;
+        background-color: rgba(17, 17, 17, 0.8);
         padding: 10px;
         border-radius: 10px;
-        border: 1px solid #330000;
+        border: 1px solid rgba(255, 26, 26, 0.3);
     }
     
     /* Кастомный заголовок */
@@ -98,6 +103,7 @@ st.markdown("""
         color: #d1d5db;
         font-size: 1.2rem;
         margin-bottom: 40px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
     
     /* Скрываем лишнее */
@@ -211,7 +217,6 @@ if not st.session_state.messages and not st.session_state.starter_prompt:
 
 # --- Отображение истории ---
 for msg in st.session_state.messages:
-    # Аватарки в цветах неона (красный/розовый)
     avatar = "👤" if msg["role"] == "user" else "🎓"
     with st.chat_message(msg["role"], avatar=avatar):
         if msg.get("image"):
