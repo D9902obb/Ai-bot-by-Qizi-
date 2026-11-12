@@ -3,66 +3,96 @@ from google import genai
 from google.genai import types
 
 # --- Настройка страницы ---
-st.set_page_config(page_title="ИИ-Помощник ученика", page_icon="🎓", layout="centered")
+st.set_page_config(page_title="ИИ-Помощник", page_icon="🤖", layout="centered", initial_sidebar_state="expanded")
 
-# --- КАСТОМНЫЙ ДИЗАЙН (CSS) ---
+# --- КАСТОМНЫЙ ДИЗАЙН В СТИЛЕ CHATGPT ---
 st.markdown("""
 <style>
-    /* Красивый фон приложения */
+    /* Основной фон (темно-серый, как в ChatGPT) */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        background-color: #212121;
+        color: #ececec;
     }
     
-    /* Стили для заголовка */
-    .main-title {
-        text-align: center;
-        background: -webkit-linear-gradient(45deg, #38bdf8, #818cf8);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 800;
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
+    /* Фон боковой панели (еще темнее) */
+    [data-testid="stSidebar"] {
+        background-color: #171717;
+        border-right: 1px solid #333;
     }
     
-    .sub-title {
-        text-align: center;
-        color: #94a3b8;
-        font-size: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    /* Стили для сообщений чата */
-    .stChatMessage {
-        border-radius: 15px;
-        padding: 10px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    /* Убираем стандартные отступы и делаем текст чистым */
+    .stMarkdown, p, h1, h2, h3 {
+        color: #ececec !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     
-    /* Стили для поля ввода */
-    .stChatInput textarea {
-        border-radius: 20px !important;
+    /* Стили для сообщений */
+    [data-testid="stChatMessage"] {
+        background-color: transparent !important;
+        border: none !important;
+        padding: 1rem 0;
+        border-bottom: 1px solid #333;
     }
     
-    /* Скрываем стандартный футер и меню Streamlit */
+    /* Поле ввода в стиле ChatGPT */
+    [data-testid="stChatInput"] {
+        background-color: #2f2f2f;
+        border: 1px solid #444;
+        border-radius: 12px;
+        color: #fff;
+    }
+    
+    [data-testid="stChatInput"] textarea {
+        color: #fff !important;
+    }
+    
+    /* Скрываем меню, футер и шапку Streamlit */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    
+    /* Кнопка в боковой панели */
+    .stButton>button {
+        background-color: #2f2f2f;
+        color: #ececec;
+        border: 1px solid #444;
+        border-radius: 8px;
+        width: 100%;
+        transition: 0.2s;
+    }
+    .stButton>button:hover {
+        background-color: #444;
+        color: #fff;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Заголовок ---
-st.markdown('<div class="main-title">🎓 ИИ-Помощник ученика</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Объяснит любую тему простыми словами и поможет с домашкой</div>', unsafe_allow_html=True)
+# --- Боковая панель ---
+with st.sidebar:
+    st.markdown("### 🤖 ИИ-Помощник")
+    st.markdown("---")
+    
+    subject = st.selectbox(
+        "Предмет",
+        ["Общие вопросы", "Математика", "Физика", "История", "Русский язык", "Английский язык", "Биология", "Химия"]
+    )
+    
+    st.markdown("---")
+    
+    if st.button("＋ Новый чат"):
+        st.session_state.messages = []
+        st.rerun()
+        
+    st.markdown("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+    st.caption("Создатель: Губанов Руслан, 9а класс")
 
 # --- Подключение API-ключа ---
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except Exception:
-    st.error("⚠️ Не найден ключ GEMINI_API_KEY. Добавьте его в настройках Streamlit Cloud.")
+    st.error("⚠️ Не найден ключ GEMINI_API_KEY.")
     st.stop()
 
-# Инициализация клиента
 try:
     client = genai.Client(
         api_key=api_key,
@@ -72,21 +102,6 @@ try:
     )
 except Exception:
     client = genai.Client(api_key=api_key)
-
-# --- Боковая панель ---
-with st.sidebar:
-    st.markdown("### ⚙️ Настройки")
-    st.markdown("Настройте бота под свои нужды:")
-    subject = st.selectbox(
-        "📚 Какой предмет изучаем?",
-        ["Общие вопросы", "Математика", "Физика", "История", "Русский язык", "Английский язык", "Биология", "Химия"]
-    )
-    
-    st.divider() # Красивая разделительная линия
-    
-    if st.button("🗑️ Очистить историю", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
 
 # --- Инструкция для бота ---
 base_prompt = (
@@ -105,19 +120,19 @@ if subject != "Общие вопросы":
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Отображаем историю с аватарками
+# Отображаем историю
 for msg in st.session_state.messages:
-    avatar = "🙋‍♂️" if msg["role"] == "user" else "🎓"
+    avatar = "🧑‍🎓" if msg["role"] == "user" else "🤖"
     with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
 
 # --- Логика чата ---
-if prompt := st.chat_input("Задай вопрос или напиши тему..."):
+if prompt := st.chat_input("Напишите сообщение..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar="🙋‍♂️"):
+    with st.chat_message("user", avatar="🧑‍🎓"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant", avatar="🎓"):
+    with st.chat_message("assistant", avatar="🤖"):
         response_placeholder = st.empty()
         full_response = ""
         
@@ -146,4 +161,4 @@ if prompt := st.chat_input("Задай вопрос или напиши тему
             st.session_state.messages.append({"role": "assistant", "content": full_response})
             
         except Exception as e:
-            st.error(f"Ошибка: {e}. Если это 429, значит закончился дневной лимит.")
+            st.error(f"Ошибка: {e}. Подождите, если исчерпан лимит.")
