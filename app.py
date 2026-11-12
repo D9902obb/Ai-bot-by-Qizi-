@@ -5,10 +5,14 @@ from datetime import datetime
 from gtts import gTTS
 import io
 import re
-import time
 
-# --- Настройка страницы ---
-st.set_page_config(page_title="Prime", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
+# --- Настройка страницы (Логотип на вкладке браузера) ---
+st.set_page_config(
+    page_title="Prime", 
+    page_icon="https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/1ecdb4de9502c3edfc2a7a29db13ba5819763dc7/IMG_20261112_203701_728.jpg", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
 
 # --- КАСТОМНЫЙ ДИЗАЙН (КРАСНЫЙ НЕОН) ---
 st.markdown("""
@@ -102,7 +106,6 @@ st.markdown("""
 # --- ЗАГОЛОВОК ---
 st.markdown("""
 <div class="main-title">
-    <span>🎓</span>
     <span><span class="red-letter">P</span>rime</span>
 </div>
 <div class="main-subtitle">ИИ-Помощник ученика. Слушает, говорит и решает задачи.</div>
@@ -148,17 +151,16 @@ if "last_audio_id" not in st.session_state:
 
 # --- Боковая панель ---
 with st.sidebar:
-    st.markdown("<h2 style='color: #ff1a1a;'>🎓 Prime</h2>", unsafe_allow_html=True)
+    # Ваш логотип в левом меню
+    st.image("https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/1ecdb4de9502c3edfc2a7a29db13ba5819763dc7/IMG_20261112_203701_728.jpg", use_container_width=True)
+    st.markdown("<h3 style='color: #ff1a1a; text-align: center; margin-top: -10px;'>Prime</h3>", unsafe_allow_html=True)
     
-    # НОВОЕ: Голосовой ввод
+    # Голосовой ввод
     st.markdown("### 🎤 Голосовой ввод")
     audio_value = st.audio_input("Нажмите и говорите")
     
-    # Если записали новое аудио
     if audio_value is not None and audio_value.file_id != st.session_state.last_audio_id:
         st.session_state.last_audio_id = audio_value.file_id
-        
-        # Добавляем сообщение в историю
         st.session_state.messages.append({
             "role": "user", 
             "content": "🎤 Голосовое сообщение", 
@@ -284,7 +286,7 @@ if chat_input:
         msg_data["image"] = user_files[0]
 
     st.session_state.messages.append(msg_data)
-    st.rerun() # Перезапуск для отображения сообщения
+    st.rerun() 
 
 # Проверяем, есть ли новое сообщение от пользователя, на которое нужно ответить
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
@@ -294,7 +296,6 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
         
         try:
             contents = []
-            # Собираем контекст диалога (текст, фото, аудио)
             for m in st.session_state.messages:
                 parts = []
                 if m.get("content") and m["content"] != "🎤 Голосовое сообщение":
