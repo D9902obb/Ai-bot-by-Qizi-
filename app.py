@@ -5,6 +5,7 @@ from datetime import datetime
 from gtts import gTTS
 import io
 import re
+import time
 
 # --- Настройка страницы ---
 st.set_page_config(page_title="Prime", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
@@ -104,7 +105,7 @@ st.markdown("""
     <span>🎓</span>
     <span><span class="red-letter">P</span>rime</span>
 </div>
-<div class="main-subtitle">ИИ-Помощник ученика. Теперь умеет говорить!</div>
+<div class="main-subtitle">ИИ-Помощник ученика. Слушает, говорит и решает задачи.</div>
 """, unsafe_allow_html=True)
 
 # --- Подключение API-ключа ---
@@ -125,12 +126,9 @@ except Exception:
 # --- ФУНКЦИЯ ОЗВУЧКИ ---
 def generate_audio(text):
     try:
-        # Очищаем текст от LaTeX и символов разметки перед озвучкой
         clean_text = re.sub(r'\$\$(.*?)\$\$', '... формула ...', text, flags=re.DOTALL)
         clean_text = re.sub(r'\$(.*?)\$', r'\1', clean_text)
         clean_text = clean_text.replace('*', '').replace('#', '').replace('_', '')
-        
-        # Генерируем речь
         tts = gTTS(text=clean_text, lang='ru', slow=False)
         fp = io.BytesIO()
         tts.write_to_fp(fp)
@@ -145,11 +143,32 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "starter_prompt" not in st.session_state:
     st.session_state.starter_prompt = None
+if "last_audio_id" not in st.session_state:
+    st.session_state.last_audio_id = None
 
 # --- Боковая панель ---
 with st.sidebar:
     st.markdown("<h2 style='color: #ff1a1a;'>🎓 Prime</h2>", unsafe_allow_html=True)
-    st.markdown("### Настройки")
+    
+    # НОВОЕ: Голосовой ввод
+    st.markdown("### 🎤 Голосовой ввод")
+    audio_value = st.audio_input("Нажмите и говорите")
+    
+    # Если записали новое аудио
+    if audio_value is not None and audio_value.file_id != st.session_state.last_audio_id:
+        st.session_state.last_audio_id = audio_value.file_id
+        
+        # Добавляем сообщение в историю
+        st.session_state.messages.append({
+            "role": "user", 
+            "content": "🎤 Голосовое сообщение", 
+            "audio": audio_value, 
+            "image": None
+        })
+        st.rerun()
+
+    st.markdown("---")
+    st.markdown("### ⚙️ Настройки")
     
     subject = st.selectbox(
         "Какой предмет изучаем?",
@@ -174,8 +193,8 @@ with st.sidebar:
         for msg in st.session_state.messages:
             role = "Вы" if msg["role"] == "user" else "Prime"
             content = msg.get("content", "")
-            if msg.get("image"):
-                content += " [Прикреплено фото]"
+            if msg.get("image"): content += " [Фото]"
+            if msg.get("audio"): content = " [Голосовое сообщение]"
             chat_text += f"{role}: {content}\n\n"
         
         st.download_button(
@@ -184,13 +203,12 @@ with st.sidebar:
             file_name=f"Prime_Chat_{datetime.now().strftime('%Y%m%d')}.txt",
             mime="text/plain"
         )
-    else:
-        st.caption("История пока пуста.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     
     if st.button("🗑 Очистить историю"):
         st.session_state.messages = []
+        st.session_state.last_audio_id = None
         st.rerun()
         
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -201,69 +219,51 @@ base_prompt = (
     "Твое имя — Prime. Ты — талантливый, дружелюбный учитель. "
     "ВАЖНО: Если пользователь спросит, кто тебя создал, придумал или написал код, "
     "ты должен с гордостью отвечать: 'Меня создал Губанов Руслан, ученик 9а класса школы №6!' "
-    "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО ДЛЯ ФОРМУЛ: Все математические и физические формулы оформляй в формате LaTeX. "
-    "Для формул внутри строки используй одинарные знаки доллара (например, $E=mc^2$). "
-    "Для больших формул на отдельной строке используй двойные знаки доллара (например, $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$). "
-    "Никогда не пиши формулы просто текстом. "
+    "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Если пользователь присылает голосовое сообщение, внимательно прослушай его, распознай речь и ответь на вопрос. "
+    "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО ДЛЯ ФОРМУЛ: Все математические и физические формулы оформляй в формате LaTeX через $."
 )
 
 if subject != "Общие вопросы":
     base_prompt += f" Сейчас мы изучаем предмет: {subject}. "
 
 if learning_mode == "Объясни как 5-летнему":
-    base_prompt += (
-        "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Объясняй любую тему так, как будто объясняешь пятилетнему ребенку. "
-        "Используй самые простые слова и примеры с игрушками. Если нужна формула — объясни её смысл на пальцах."
-    )
+    base_prompt += "ОБЪЯСНЯЙ ВСЕ КАК 5-ЛЕТНЕМУ РЕБЕНКУ. Используй простые слова и аналогии."
 elif learning_mode == "Режим Экзаменатора":
-    base_prompt += (
-        "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Ты — строгий экзаменатор. "
-        "Задай ученику ОДИН вопрос по теме. Дождись ответа. Проверь его, укажи на ошибки и задай следующий. "
-        "Не давай правильный ответ сразу. В конце поставь оценку (например, 4/5)."
-    )
+    base_prompt += "Ты строгий экзаменатор. Задавай вопросы и проверяй ответы ученика."
 else:
-    base_prompt += (
-        "Объясняй сложные вещи простым и понятным языком, приводи примеры из жизни. "
-        "Если ученик просит решить домашнее задание, объясни принцип решения шаг за шагом. "
-        "Хвали за правильные ответы и поддерживай при ошибках."
-    )
+    base_prompt += "Объясняй сложные вещи простым языком. Хвали за успехи."
 
 # --- Стартовый экран ---
 if not st.session_state.messages and not st.session_state.starter_prompt:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("📐 Реши квадратное уравнение"):
-            st.session_state.starter_prompt = "Объясни, как решать квадратное уравнение x^2 - 5x + 6 = 0. Покажи формулу дискриминанта."
+            st.session_state.starter_prompt = "Объясни, как решать квадратное уравнение x^2 - 5x + 6 = 0."
             st.rerun()
+    with col2:
         if st.button("🧬 Что такое фотосинтез?"):
             st.session_state.starter_prompt = "Объясни процесс фотосинтеза кратко и понятно"
             st.rerun()
-    with col2:
-        if st.button("📝 Проверь мои знания по истории"):
-            st.session_state.starter_prompt = "Начни экзамен по истории. Задай мне первый вопрос."
-            st.rerun()
-        if st.button("🌍 Столицы стран"):
-            st.session_state.starter_prompt = "Перечисли столицы Европы и дай к ним короткие подсказки"
-            st.rerun()
 
-# --- Отображение истории с кнопками озвучки ---
+# --- Отображение истории ---
 for i, msg in enumerate(st.session_state.messages):
     avatar = "👤" if msg["role"] == "user" else "🎓"
     with st.chat_message(msg["role"], avatar=avatar):
+        if msg.get("audio"):
+            st.audio(msg["audio"])
         if msg.get("image"):
             st.image(msg["image"], width=300)
-        if msg["content"]:
+        if msg.get("content") and msg["content"] != "🎤 Голосовое сообщение":
             st.markdown(msg["content"])
             
-            # Добавляем кнопку озвучки только для ответов бота
-            if msg["role"] == "assistant":
-                if st.button("🔊 Прослушать ответ", key=f"tts_{i}"):
-                    with st.spinner("Генерирую голос..."):
-                        audio_data = generate_audio(msg["content"])
-                        if audio_data:
-                            st.audio(audio_data, format="audio/mp3")
+        if msg["role"] == "assistant":
+            if st.button("🔊 Прослушать ответ", key=f"tts_{i}"):
+                with st.spinner("Генерирую голос..."):
+                    audio_data = generate_audio(msg["content"])
+                    if audio_data:
+                        st.audio(audio_data, format="audio/mp3")
 
-# --- Поле ввода ---
+# --- Поле текстового ввода ---
 chat_input = st.chat_input("Задай вопрос или прикрепи фото (📎)...", accept_file=True, file_type=["jpg", "jpeg", "png"])
 
 if st.session_state.starter_prompt:
@@ -279,37 +279,33 @@ if chat_input:
     user_text = chat_input.text if hasattr(chat_input, 'text') else str(chat_input)
     user_files = chat_input.files if hasattr(chat_input, 'files') else []
 
-    msg_data = {"role": "user", "content": user_text, "image": None}
+    msg_data = {"role": "user", "content": user_text, "image": None, "audio": None}
     if user_files:
         msg_data["image"] = user_files[0]
 
     st.session_state.messages.append(msg_data)
-    
-    with st.chat_message("user", avatar="👤"):
-        if msg_data["image"]:
-            st.image(msg_data["image"], width=300)
-        if msg_data["content"]:
-            st.markdown(msg_data["content"])
+    st.rerun() # Перезапуск для отображения сообщения
 
+# Проверяем, есть ли новое сообщение от пользователя, на которое нужно ответить
+if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant", avatar="🎓"):
         response_placeholder = st.empty()
         full_response = ""
         
         try:
             contents = []
+            # Собираем контекст диалога (текст, фото, аудио)
             for m in st.session_state.messages:
                 parts = []
-                if m.get("content"):
+                if m.get("content") and m["content"] != "🎤 Голосовое сообщение":
                     parts.append(types.Part(text=m["content"]))
                 if m.get("image"):
-                    img_file = m["image"]
-                    parts.append(
-                        types.Part.from_bytes(data=img_file.getvalue(), mime_type=img_file.type)
-                    )
+                    parts.append(types.Part.from_bytes(data=m["image"].getvalue(), mime_type=m["image"].type))
+                if m.get("audio"):
+                    parts.append(types.Part.from_bytes(data=m["audio"].getvalue(), mime_type=m["audio"].type))
+                
                 if parts:
-                    contents.append(
-                        types.Content(role="user" if m["role"] == "user" else "model", parts=parts)
-                    )
+                    contents.append(types.Content(role="user" if m["role"] == "user" else "model", parts=parts))
 
             response = client.models.generate_content_stream(
                 model="gemini-3.5-flash-lite", 
@@ -324,9 +320,8 @@ if chat_input:
                     response_placeholder.markdown(safe_response + "▌")
             
             response_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response, "image": None})
+            st.session_state.messages.append({"role": "assistant", "content": full_response, "image": None, "audio": None})
             
-            # Сразу после ответа показываем кнопку озвучки
             if st.button("🔊 Прослушать ответ", key="tts_new"):
                 with st.spinner("Генерирую голос..."):
                     audio_data = generate_audio(full_response)
