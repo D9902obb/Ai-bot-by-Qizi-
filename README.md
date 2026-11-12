@@ -1,1 +1,1 @@
-# Ai-bot-by-Qizi-
+# prime-by-Qizi-
