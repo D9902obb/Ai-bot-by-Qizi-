@@ -8,7 +8,6 @@ st.set_page_config(page_title="Prime", page_icon="🤖", layout="wide", initial_
 # --- КАСТОМНЫЙ ДИЗАЙН (НЕОНОВЫЙ 3D-СТИЛЬ) ---
 st.markdown("""
 <style>
-    /* Основной фон */
     .stApp {
         background-image: url("https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/6f164babca9829332a8448705c6c84796ffe72a6/IMG_20261112_111419_754.jpg");
         background-size: cover;
@@ -17,21 +16,15 @@ st.markdown("""
         background-color: rgba(10, 10, 20, 0.85);
         background-blend-mode: overlay;
     }
-    
-    /* Боковая панель */
     [data-testid="stSidebar"] {
         background: rgba(15, 20, 35, 0.7) !important;
         backdrop-filter: blur(15px);
         border-right: 1px solid rgba(124, 58, 237, 0.3);
     }
-    
-    /* Текст */
-    .stMarkdown, p, h1, h2, h3, span {
+    .stMarkdown, p, h1, h2, h3, span, label {
         color: #f8fafc !important;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    
-    /* Пузыри сообщений */
     [data-testid="stChatMessage"] {
         background-color: rgba(30, 35, 55, 0.75) !important;
         backdrop-filter: blur(10px);
@@ -41,16 +34,12 @@ st.markdown("""
         margin-bottom: 15px !important;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     }
-    
-    /* Поле ввода */
     [data-testid="stChatInput"] {
         background-color: rgba(20, 25, 40, 0.9) !important;
         border: 2px solid #8b5cf6 !important;
         border-radius: 30px !important;
         box-shadow: 0 0 20px rgba(139, 92, 246, 0.6) !important;
     }
-    
-    /* Кнопки в стартовом меню */
     .stButton>button {
         background: rgba(30, 35, 55, 0.6) !important;
         color: #e2e8f0 !important;
@@ -69,8 +58,13 @@ st.markdown("""
         border-color: #a78bfa !important;
         transform: translateY(-2px);
     }
-    
-    /* Скрываем лишнее */
+    /* Красивое оформление радиокнопок в сайдбаре */
+    [data-testid="stSidebar"] .stRadio > div {
+        background-color: rgba(30, 35, 55, 0.5);
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(124, 58, 237, 0.3);
+    }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -96,30 +90,61 @@ except Exception:
 with st.sidebar:
     st.markdown("## 🎓 ИИ-Помощник")
     st.markdown("---")
+    
     st.markdown("### ⚙️ Настройки")
     subject = st.selectbox(
         "Предмет:",
         ["Общие вопросы", "Математика", "Физика", "История", "Русский язык", "Английский язык", "Биология", "Химия"]
     )
-    st.markdown("<br>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # НОВОЕ: Умный режим обучения
+    st.markdown("### 🧠 Умный режим")
+    learning_mode = st.radio(
+        "Выберите стиль общения:",
+        ["Обычный помощник", "Объясни как 5-летнему", "Режим Экзаменатора"]
+    )
+    
+    st.markdown("---")
+    
     if st.button("🕒 Очистить историю"):
         st.session_state.messages = []
         st.rerun()
-    st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)
+        
+    st.markdown("<br><br>", unsafe_allow_html=True)
     st.caption("Создатель: Губанов Руслан, 9а класс")
 
-# --- Инструкция для бота ---
+# --- Формирование инструкции для бота ---
 base_prompt = (
-    "Твое имя — Prime. Ты — талантливый, терпеливый и дружелюбный учитель. "
-    "Объясняй сложные вещи простым и понятным языком, приводи примеры из жизни. "
-    "Если ученик присылает фото задачи, внимательно прочитай текст на нем и реши задачу шаг за шагом. "
-    "Если ученик просит решить домашнее задание текстом, НЕ давай сразу готовый ответ, а объясни принцип. "
-    "Хвали за правильные ответы и поддерживай при ошибках. "
+    "Твое имя — Prime. Ты — талантливый, дружелюбный учитель. "
     "ВАЖНО: Если пользователь спросит, кто тебя создал, придумал или написал код, "
-    "ты должен с гордостью отвечать: 'Меня создал Губанов Руслан, ученик 9а класса школы №6!'"
+    "ты должен с гордостью отвечать: 'Меня создал Губанов Руслан, ученик 9а класса школы №6!' "
 )
+
 if subject != "Общие вопросы":
-    base_prompt += f" Сейчас мы изучаем предмет: {subject}."
+    base_prompt += f" Сейчас мы изучаем предмет: {subject}. "
+
+# Добавляем правила в зависимости от выбранного режима
+if learning_mode == "Объясни как 5-летнему":
+    base_prompt += (
+        "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Объясняй любую тему так, как будто объясняешь пятилетнему ребенку. "
+        "Используй самые простые слова, приводи примеры с игрушками, конфетами или сказочными персонажами. "
+        "Никаких сложных терминов и длинных формул."
+    )
+elif learning_mode == "Режим Экзаменатора":
+    base_prompt += (
+        "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Ты — строгий, но справедливый экзаменатор. "
+        "Когда ученик называет тему, задай ему ОДИН вопрос по этой теме. Дождись его ответа. "
+        "Проверь ответ, укажи на ошибки (если есть) и задай следующий вопрос. Не давай правильный ответ сразу, "
+        "дай ученику подумать. В конце поставь оценку (например, 4/5)."
+    )
+else:
+    base_prompt += (
+        "Объясняй сложные вещи простым и понятным языком, приводи примеры из жизни. "
+        "Если ученик просит решить домашнее задание, НЕ давай сразу готовый ответ, а объясни принцип. "
+        "Хвали за правильные ответы и поддерживай при ошибках."
+    )
 
 # --- Инициализация истории ---
 if "messages" not in st.session_state:
@@ -127,9 +152,9 @@ if "messages" not in st.session_state:
 if "starter_prompt" not in st.session_state:
     st.session_state.starter_prompt = None
 
-# --- Логика стартового экрана (если чат пуст) ---
+# --- Стартовый экран (если чат пуст) ---
 if not st.session_state.messages and not st.session_state.starter_prompt:
-    st.markdown("<h2 style='text-align: center; color: #a78bfa; margin-bottom: 30px;'>Привет! Я Prime 🤖<br><span style='font-size: 18px; color: #cbd5e1;'>Чем я могу помочь тебе сегодня?</span></h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #a78bfa; margin-bottom: 30px;'>Привет! Я Prime 🤖<br><span style='font-size: 18px; color: #cbd5e1;'>Выбери режим в меню слева и давай учиться!</span></h2>", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -140,8 +165,8 @@ if not st.session_state.messages and not st.session_state.starter_prompt:
             st.session_state.starter_prompt = "Объясни процесс фотосинтеза кратко и понятно"
             st.rerun()
     with col2:
-        if st.button("📝 Помоги написать конспект"):
-            st.session_state.starter_prompt = "Как правильно и быстро написать конспект по параграфу?"
+        if st.button("📝 Проверь мои знания по истории"):
+            st.session_state.starter_prompt = "Начни экзамен по истории. Задай мне первый вопрос."
             st.rerun()
         if st.button("🌍 Столицы стран"):
             st.session_state.starter_prompt = "Перечисли столицы Европы и дай к ним короткие подсказки для запоминания"
@@ -159,7 +184,6 @@ for msg in st.session_state.messages:
 # --- Поле ввода ---
 chat_input = st.chat_input("Задай вопрос или прикрепи фото (📎)...", accept_file=True, file_type=["jpg", "jpeg", "png"])
 
-# Проверяем, была ли нажата кнопка стартового меню
 if st.session_state.starter_prompt:
     class MockInput:
         def __init__(self, text):
