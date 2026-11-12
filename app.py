@@ -6,7 +6,7 @@ from gtts import gTTS
 import io
 import re
 
-# --- Настройка страницы (Логотип на вкладке браузера) ---
+# --- Настройка страницы (Логотип остался на вкладке браузера) ---
 st.set_page_config(
     page_title="Prime", 
     page_icon="https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/1ecdb4de9502c3edfc2a7a29db13ba5819763dc7/IMG_20261112_203701_728.jpg", 
@@ -151,9 +151,9 @@ if "last_audio_id" not in st.session_state:
 
 # --- Боковая панель ---
 with st.sidebar:
-    # Ваш логотип в левом меню
-    st.image("https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/1ecdb4de9502c3edfc2a7a29db13ba5819763dc7/IMG_20261112_203701_728.jpg", use_container_width=True)
-    st.markdown("<h3 style='color: #ff1a1a; text-align: center; margin-top: -10px;'>Prime</h3>", unsafe_allow_html=True)
+    # Убрали картинку, оставили только красивый заголовок
+    st.markdown("<h2 style='color: #ff1a1a; text-align: center;'>🎓 Prime</h2>", unsafe_allow_html=True)
+    st.markdown("---")
     
     # Голосовой ввод
     st.markdown("### 🎤 Голосовой ввод")
