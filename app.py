@@ -3,72 +3,117 @@ from google import genai
 from google.genai import types
 
 # --- Настройка страницы ---
-st.set_page_config(page_title="Prime", page_icon="🤖", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Prime", page_icon="🎓", layout="wide", initial_sidebar_state="expanded")
 
-# --- КАСТОМНЫЙ ДИЗАЙН (НЕОНОВЫЙ 3D-СТИЛЬ) ---
+# --- КАСТОМНЫЙ ДИЗАЙН (КРАСНЫЙ НЕОН) ---
 st.markdown("""
 <style>
+    /* Основной фон с красным свечением */
     .stApp {
-        background-image: url("https://raw.githubusercontent.com/D9902obb/Ai-bot-by-Qizi-/6f164babca9829332a8448705c6c84796ffe72a6/IMG_20261112_111419_754.jpg");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        background-color: rgba(10, 10, 20, 0.85);
-        background-blend-mode: overlay;
+        background: radial-gradient(circle at 50% 0%, #2a0000 0%, #0a0a0a 50%, #000000 100%);
+        color: #ffffff;
     }
+    
+    /* Боковая панель */
     [data-testid="stSidebar"] {
-        background: rgba(15, 20, 35, 0.7) !important;
-        backdrop-filter: blur(15px);
-        border-right: 1px solid rgba(124, 58, 237, 0.3);
+        background-color: #0a0a0a !important;
+        border-right: 1px solid #330000;
     }
+    
+    /* Текст */
     .stMarkdown, p, h1, h2, h3, span, label {
         color: #f8fafc !important;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
+    
+    /* Стили для пузырей сообщений */
     [data-testid="stChatMessage"] {
-        background-color: rgba(30, 35, 55, 0.75) !important;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(124, 58, 237, 0.4) !important;
-        border-radius: 15px !important;
+        background-color: #111111 !important;
+        border: 1px solid #ff1a1a !important;
+        border-radius: 12px !important;
         padding: 15px !important;
         margin-bottom: 15px !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 0 15px rgba(255, 26, 26, 0.1);
     }
+    
+    /* Поле ввода (красная рамка) */
     [data-testid="stChatInput"] {
-        background-color: rgba(20, 25, 40, 0.9) !important;
-        border: 2px solid #8b5cf6 !important;
-        border-radius: 30px !important;
-        box-shadow: 0 0 20px rgba(139, 92, 246, 0.6) !important;
-    }
-    .stButton>button {
-        background: rgba(30, 35, 55, 0.6) !important;
-        color: #e2e8f0 !important;
-        border: 1px solid rgba(124, 58, 237, 0.5) !important;
+        background-color: #0a0a0a !important;
+        border: 2px solid #ff1a1a !important;
         border-radius: 12px !important;
+        box-shadow: 0 0 15px rgba(255, 26, 26, 0.3) !important;
+    }
+    [data-testid="stChatInput"] textarea {
+        color: #ffffff !important;
+    }
+    
+    /* Кнопки */
+    .stButton>button {
+        background-color: #111111 !important;
+        color: #ffffff !important;
+        border: 1px solid #ff1a1a !important;
+        border-radius: 8px !important;
         width: 100%;
-        height: 60px;
-        font-size: 16px !important;
         transition: all 0.3s ease;
-        backdrop-filter: blur(5px);
     }
     .stButton>button:hover {
-        background: rgba(124, 58, 237, 0.8) !important;
-        color: #fff !important;
-        box-shadow: 0 0 20px rgba(124, 58, 237, 0.8);
-        border-color: #a78bfa !important;
-        transform: translateY(-2px);
+        background-color: #ff1a1a !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 15px rgba(255, 26, 26, 0.6);
     }
-    /* Красивое оформление радиокнопок в сайдбаре */
+    
+    /* Выпадающий список */
+    .stSelectbox div[data-baseweb="select"] > div {
+        background-color: #111111 !important;
+        border: 1px solid #330000 !important;
+        color: #fff !important;
+    }
+    
+    /* Радиокнопки (режимы) */
     [data-testid="stSidebar"] .stRadio > div {
-        background-color: rgba(30, 35, 55, 0.5);
+        background-color: #111111;
         padding: 10px;
         border-radius: 10px;
-        border: 1px solid rgba(124, 58, 237, 0.3);
+        border: 1px solid #330000;
     }
+    
+    /* Кастомный заголовок */
+    .main-title {
+        text-align: center;
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-top: -20px;
+        margin-bottom: 0px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+    }
+    .main-title .red-letter {
+        color: #ff1a1a;
+        text-shadow: 0 0 20px rgba(255, 26, 26, 0.8);
+    }
+    .main-subtitle {
+        text-align: center;
+        color: #d1d5db;
+        font-size: 1.2rem;
+        margin-bottom: 40px;
+    }
+    
+    /* Скрываем лишнее */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 </style>
+""", unsafe_allow_html=True)
+
+# --- КАСТОМНЫЙ ЗАГОЛОВОК ---
+st.markdown("""
+<div class="main-title">
+    <span>🎓</span>
+    <span><span class="red-letter">P</span>rime</span>
+</div>
+<div class="main-subtitle">ИИ-Помощник ученика. Объясняет любую тему простыми словами.</div>
 """, unsafe_allow_html=True)
 
 # --- Подключение API-ключа ---
@@ -88,27 +133,23 @@ except Exception:
 
 # --- Боковая панель ---
 with st.sidebar:
-    st.markdown("## 🎓 ИИ-Помощник")
-    st.markdown("---")
+    st.markdown("<h2 style='color: #ff1a1a;'>🎓 Prime</h2>", unsafe_allow_html=True)
+    st.markdown("### Настройки")
     
-    st.markdown("### ⚙️ Настройки")
     subject = st.selectbox(
-        "Предмет:",
+        "Какой предмет изучаем?",
         ["Общие вопросы", "Математика", "Физика", "История", "Русский язык", "Английский язык", "Биология", "Химия"]
     )
     
     st.markdown("---")
-    
-    # НОВОЕ: Умный режим обучения
     st.markdown("### 🧠 Умный режим")
     learning_mode = st.radio(
-        "Выберите стиль общения:",
+        "Стиль общения:",
         ["Обычный помощник", "Объясни как 5-летнему", "Режим Экзаменатора"]
     )
     
     st.markdown("---")
-    
-    if st.button("🕒 Очистить историю"):
+    if st.button("🗑 Очистить историю"):
         st.session_state.messages = []
         st.rerun()
         
@@ -125,19 +166,17 @@ base_prompt = (
 if subject != "Общие вопросы":
     base_prompt += f" Сейчас мы изучаем предмет: {subject}. "
 
-# Добавляем правила в зависимости от выбранного режима
 if learning_mode == "Объясни как 5-летнему":
     base_prompt += (
         "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Объясняй любую тему так, как будто объясняешь пятилетнему ребенку. "
-        "Используй самые простые слова, приводи примеры с игрушками, конфетами или сказочными персонажами. "
-        "Никаких сложных терминов и длинных формул."
+        "Используй самые простые слова, приводи примеры с игрушками или конфетами. "
+        "Никаких сложных терминов."
     )
 elif learning_mode == "Режим Экзаменатора":
     base_prompt += (
-        "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Ты — строгий, но справедливый экзаменатор. "
-        "Когда ученик называет тему, задай ему ОДИН вопрос по этой теме. Дождись его ответа. "
-        "Проверь ответ, укажи на ошибки (если есть) и задай следующий вопрос. Не давай правильный ответ сразу, "
-        "дай ученику подумать. В конце поставь оценку (например, 4/5)."
+        "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО: Ты — строгий экзаменатор. "
+        "Задай ученику ОДИН вопрос по теме. Дождись ответа. Проверь его, укажи на ошибки и задай следующий. "
+        "Не давай правильный ответ сразу. В конце поставь оценку (например, 4/5)."
     )
 else:
     base_prompt += (
@@ -154,8 +193,6 @@ if "starter_prompt" not in st.session_state:
 
 # --- Стартовый экран (если чат пуст) ---
 if not st.session_state.messages and not st.session_state.starter_prompt:
-    st.markdown("<h2 style='text-align: center; color: #a78bfa; margin-bottom: 30px;'>Привет! Я Prime 🤖<br><span style='font-size: 18px; color: #cbd5e1;'>Выбери режим в меню слева и давай учиться!</span></h2>", unsafe_allow_html=True)
-    
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🧮 Объясни теорему Пифагора"):
@@ -174,7 +211,8 @@ if not st.session_state.messages and not st.session_state.starter_prompt:
 
 # --- Отображение истории ---
 for msg in st.session_state.messages:
-    avatar = "👩‍🎓" if msg["role"] == "user" else "🎓"
+    # Аватарки в цветах неона (красный/розовый)
+    avatar = "👤" if msg["role"] == "user" else "🎓"
     with st.chat_message(msg["role"], avatar=avatar):
         if msg.get("image"):
             st.image(msg["image"], width=300)
@@ -203,7 +241,7 @@ if chat_input:
 
     st.session_state.messages.append(msg_data)
     
-    with st.chat_message("user", avatar="👩‍🎓"):
+    with st.chat_message("user", avatar="👤"):
         if msg_data["image"]:
             st.image(msg_data["image"], width=300)
         if msg_data["content"]:
