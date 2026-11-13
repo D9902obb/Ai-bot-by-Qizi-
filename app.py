@@ -75,6 +75,16 @@ with st.sidebar:
     st.markdown("<h2 style='color: #ff1a1a; text-align: center;'>🎓 Prime</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
+    # ПРОФИЛЬ УЧЕНИКА
+    st.markdown("### 👤 Профиль ученика")
+    user_name = st.text_input("Как тебя зовут?", placeholder="Например: Руслан")
+    
+    # ПОИСК В ИНТЕРНЕТЕ
+    st.markdown("### 🌐 Поиск в интернете")
+    web_search_enabled = st.toggle("Включить актуальные данные", value=False)
+    
+    st.markdown("---")
+    
     # ВЫБОР ИНСТРУМЕНТА
     st.markdown("### 🛠 Режим работы")
     tool_mode = st.radio("Выберите инструмент:", ["💬 Умный чат", "🃏 Генератор карточек"])
@@ -100,7 +110,7 @@ with st.sidebar:
 
         st.markdown("---")
     
-    # Скачивание истории (общее для всего)
+    # Скачивание истории
     if st.session_state.messages:
         chat_text = f"История диалога с Prime\nДата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
         for msg in st.session_state.messages:
@@ -124,10 +134,21 @@ base_prompt = (
     "ВАЖНО: Если пользователь спросит, кто тебя создал, отвечай: 'Меня создал Губанов Руслан, ученик 9а класса школы №6!' "
     "ОБЯЗАТЕЛЬНОЕ ПРАВИЛО ДЛЯ ФОРМУЛ: Все математические формулы оформляй в формате LaTeX через $."
 )
+
+# ПЕРСОНАЛИЗАЦИЯ
+if user_name:
+    base_prompt += f" Обращайся к ученику по имени: {user_name}. Хвали его по имени ('Отличная работа, {user_name}!')."
+
 if tool_mode == "💬 Умный чат":
     if subject != "Общие вопросы": base_prompt += f" Предмет: {subject}. "
     if learning_mode == "Объясни как 5-летнему": base_prompt += "ОБЪЯСНЯЙ КАК 5-ЛЕТНЕМУ."
     elif learning_mode == "Экзаменатор": base_prompt += "Ты строгий экзаменатор."
+
+# НАСТРОЙКА ПОИСКА В ИНТЕРНЕТЕ
+# Добавляем инструмент, если переключатель включен
+tools_list = []
+if web_search_enabled:
+    tools_list.append(types.Tool(google_search=types.GoogleSearch()))
 
 # ==========================================
 # ЭКРАН 1: ГЕНЕРАТОР КАРТОЧЕК
@@ -160,7 +181,7 @@ if tool_mode == "🃏 Генератор карточек":
                 st.error(f"Не удалось создать карточки. Попробуйте еще раз. Ошибка: {e}")
 
 # ==========================================
-# ЭКРАН 2: УМНЫЙ ЧАТ (И ПРОВЕРКА СОЧИНЕНИЙ)
+# ЭКРАН 2: УМНЫЙ ЧАТ
 # ==========================================
 else:
     # Стартовый экран
@@ -168,11 +189,11 @@ else:
         col1, col2 = st.columns(2)
         with col1:
             if st.button("📝 Проверить мое сочинение"):
-                st.session_state.starter_prompt = "Я хочу, чтобы ты проверил мое сочинение. Я прикреплю фото рукописного текста. Найди в нем грамматические и пунктуационные ошибки, объясни их и выдели главную мысль."
+                st.session_state.starter_prompt = f"Я хочу, чтобы ты проверил мое сочинение. Я прикреплю фото рукописного текста. Найди в нем грамматические и пунктуационные ошибки, объясни их и выдели главную мысль. {'Меня зовут ' + user_name + '.' if user_name else ''}"
                 st.rerun()
         with col2:
-            if st.button("📐 Реши уравнение"):
-                st.session_state.starter_prompt = "Объясни, как решать квадратное уравнение x^2 - 5x + 6 = 0."
+            if st.button("🌐 Какая сегодня погода?"):
+                st.session_state.starter_prompt = f"{user_name + ', ' if user_name else ''}Какая сегодня погода в моем городе?"
                 st.rerun()
 
     # Отображение истории
@@ -230,10 +251,16 @@ else:
                     if parts:
                         contents.append(types.Content(role="user" if m["role"] == "user" else "model", parts=parts))
 
+                # Включаем поиск в интернете, если он активирован
+                config = types.GenerateContentConfig(
+                    system_instruction=base_prompt,
+                    tools=tools_list if tools_list else None
+                )
+
                 response = client.models.generate_content_stream(
                     model="gemini-3.5-flash-lite", 
                     contents=contents,
-                    config=types.GenerateContentConfig(system_instruction=base_prompt)
+                    config=config
                 )
                 
                 for chunk in response:
